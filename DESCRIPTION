@@ -1,0 +1,10 @@
+Package: publicsuffixR
+Type: Package
+Title: Use Mozilla's publicsuffix list with R
+Version: 0.1
+Date: 2014-10-03
+Author: Keith Twombley
+Maintainer: Keith Twombley <ktwombley@gmail.com>
+Description: Interact with Mozilla's public suffix list for domain names.
+License: What license is it under?
+Suggests: memoise
