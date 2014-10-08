@@ -7,4 +7,4 @@ Author: Keith Twombley
 Maintainer: Keith Twombley <ktwombley@gmail.com>
 Description: Interact with Mozilla's public suffix list for domain names.
 License: What license is it under?
-Suggests: memoise
+Suggests: memoise, testthat
