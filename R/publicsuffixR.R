@@ -3,11 +3,12 @@
 psl_URL <- "https://publicsuffix.org/list/effective_tld_names.dat"
 
 psl_raw_list <- function() {
-  con <- file(psl_URL, "r")
-  lll<-readLines(con)
-  close(con)
-  return(lll)
-  
+  return(tryCatch({
+    readLines(file(psl_URL, "r"))
+  },
+  error = function(e) {
+    readLines(pipe(paste("wget -q -O -", psl_URL)))
+  }))  
 }
 
 
@@ -63,9 +64,21 @@ create_a_rule <- function(aline) {
 
 #The domain and all rules must be canonicalized in the normal way for hostnames - lower-case, Punycode (RFC 3492).
 #TODO: Punycode
-splitDomain <- function(domainname) as.vector(lapply(strsplit(tolower(as.character(domainname)), ".", fixed=TRUE), FUN=rev))[[1]]
+splitDomain <- function(domainname) {
+  if(is.na(domainname)) return(NA)
+  if(substr(domainname,1,1)==".") {
+    domainname <- substring(domainname,2)
+  }
+  return(as.vector(lapply(strsplit(tolower(as.character(domainname)), ".", fixed=TRUE), FUN=rev))[[1]])
+}
 
-joinDomain <- function(splitdomain) paste(rev(splitdomain), sep="", collapse=".")
+joinDomain <- function(splitdomain) {
+  if(is.na(splitdomain)){
+    return(NA)
+  } else {
+    return(paste(rev(splitdomain), sep="", collapse="."))
+  }
+}
 
                                                                                                                   
 matchDomain <- function(splitdomainname, rules) {
@@ -77,7 +90,7 @@ matchDomain <- function(splitdomainname, rules) {
   if(!is.list(rules)) {
     stop("rules doesn't seem to contain any rules.")
   }
-  if(is.na(splitdomainname)) return(list())
+  if(all(is.na(splitdomainname))) return(list())
   
   
   eachfunc <- function(rule) {
@@ -110,6 +123,7 @@ publicSuffix <- function(domainname) {
   
   # If no rules match, the prevailing rule is "*".
   if(length(matches)==0) {
+
     prevailing_rule <- "*"
   } else {
   
@@ -150,8 +164,12 @@ publicSuffix <- function(domainname) {
   }
   
   # The registered or registrable domain is the public suffix plus one additional label.
-  regable <- pubsuf
-  regable[length(regable)+1] <- sdn[length(regable)+1]
+  if(length(sdn)>length(pubsuf)){
+    regable <- pubsuf
+    regable[length(regable)+1] <- sdn[length(regable)+1]
+  } else {
+    regable <- NA
+  }
   
   return(list('public_suffix'=joinDomain(pubsuf), 'registerable'=joinDomain(regable)))
   
@@ -161,6 +179,10 @@ publicSuffix <- function(domainname) {
 checkPublicSuffix <- function(domainname, suffix) {
   my_suffix <- publicSuffix(domainname)
   regable <- my_suffix$registerable
-  return(regable==tolower(suffix))
+  if(any(is.na(c(suffix, regable)))) {
+    return(all(is.na(c(suffix, regable))))
+  } else {
+    return(regable==tolower(suffix))
+  }
 }
 
